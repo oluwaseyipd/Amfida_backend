@@ -1,0 +1,26 @@
+# Environments and packages
+.venv/
+env/
+venv/
+ENV/
+Pipfile.lock
+
+# Python artifacts
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Django specific
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Secrets and configuration
+.env
+
+# IDEs and Editors
+.vscode/
+.idea/
+.DS_Store
