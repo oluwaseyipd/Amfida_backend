@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import LandLord, Agent, OtpVerification
+
+admin.site.register(LandLord)
+admin.site.register(Agent)
+admin.site.register(OtpVerification)
