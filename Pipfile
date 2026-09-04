@@ -8,6 +8,7 @@ django = "*"
 django-split-settings = "*"
 python-dotenv = "*"
 pillow = "*"
+djangorestframework = "*"
 
 [dev-packages]
 

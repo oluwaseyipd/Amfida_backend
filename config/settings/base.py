@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Third-party apps
+    'rest_framework',
+
     # Custom apps
     'accounts',
     'feedback',
@@ -132,3 +135,8 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# CUSTOM CONFIGURATIONS
+
+# 1. Authentication
+AUTH_USER_MODEL = 'accounts.User'
