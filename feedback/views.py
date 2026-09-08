@@ -1,4 +1,4 @@
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
@@ -29,6 +29,8 @@ class ReportListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ReportDeleteView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    
     def get_object(self, pk):
         try:
             return Report.objects.get(pk=pk)
@@ -65,6 +67,8 @@ class ReviewListView(APIView):
 
 
 class ReviewDeleteView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
     def get_object(self, pk):
         try:
             return Review.objects.get(pk=pk)

@@ -1,7 +1,8 @@
-from rest_framework import status
+from rest_framework import status, permissions, generics
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
+from .permissions import IsHostelOwner
 from .models import Area, Hostel
 from .serializer import AreaSerializer, HostelSerializer
 
@@ -9,12 +10,15 @@ from .serializer import AreaSerializer, HostelSerializer
 
 # 1. Create Area
 class AreaCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
     def post(self, request):
         serializer = AreaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # 2. List Areas
 class AreaListView(APIView):
     def get(self, request):
@@ -22,15 +26,10 @@ class AreaListView(APIView):
         serializer = AreaSerializer(areas, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = AreaSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # 3. Update Area
 class AreaUpdateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
     def get_object(self, pk):
         try:
             return Area.objects.get(pk=pk)
@@ -48,6 +47,8 @@ class AreaUpdateView(APIView):
 
 # 4. Delete Area
 class AreaDeleteView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
     def get_object(self, pk):
         try:
             return Area.objects.get(pk=pk)
@@ -61,10 +62,12 @@ class AreaDeleteView(APIView):
 
 # 5. Create Hostel
 class HostelCreateView(APIView):
+    permission_classes = [IsHostelOwner]
+
     def post(self, request):
         serializer = HostelSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(landlord=request.user.landlord_profile)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -88,36 +91,12 @@ class HostelListView(APIView):
         serializer = HostelSerializer(hostels, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        serializer = HostelSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # 7. Update Hostel  
-class HostelUpdateView(APIView):
-    def get_object(self, pk):
-        try:
-            return Hostel.objects.get(pk=pk)
-        except Hostel.DoesNotExist:
-            raise Http404
+class HostelUpdateView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsHostelOwner]
+    queryset = Hostel.objects.all()
 
-    def put(self, request, pk):
-        hostel = self.get_object(pk)
-        serializer = HostelSerializer(hostel, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # 8. Delete Hostel
-class HostelDeleteView(APIView):
-    def get_object(self, pk):
-        try:
-            return Hostel.objects.get(pk=pk)
-        except Hostel.DoesNotExist:
-            raise Http404
-
-    def delete(self, request, pk):
-        hostel = self.get_object(pk)
-        hostel.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class HostelDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsHostelOwner]
+    queryset = Hostel.objects.all()

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 from .models import User, LandLordProfile, AgentProfile, OtpVerification
 
 class LandlordProfileSerializer(serializers.ModelSerializer):
@@ -21,6 +22,21 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'phone_number', 'landlord_profile', 'agent_profile', 'is_active', 'is_staff', 'date_joined', 'last_login']
+
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'phone_number', 'password']
+
+    def validate_password(self, value):
+        validate_password(value, self.instance)
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
 
 class OtpVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)

@@ -7,6 +7,14 @@ class Area(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                models.functions.Lower('name'),
+                name='unique_area_name_case_insensitive',
+            ),
+        ]
+
     def __str__(self):
         return self.name
 
