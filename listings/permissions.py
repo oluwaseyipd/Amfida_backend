@@ -6,20 +6,25 @@ class IsListingAgentOwner(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return (
-            request.user.is_authenticated
-            and hasattr(request.user, 'agent_profile')
-        )
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+
+        return hasattr(request.user, 'agent_profile')
 
     def has_object_permission(self, request, view, obj):
-        
-        # Safe methods (GET, HEAD, OPTIONS) are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # Check if the logged-in user even has an agent profile attached
-        if not request.user.is_authenticated or not hasattr(request.user, 'agent_profile'):
+
+        if not request.user.is_authenticated:
             return False
-        
-        # Check if the listing's agent matches the logged-in user's agent profile
-        return obj.agent == request.user.agent_profile        
+
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+
+        if not hasattr(request.user, 'agent_profile'):
+            return False
+
+        return obj.agent == request.user.agent_profile

@@ -6,8 +6,9 @@ from .models import Report, Review
 from .serializer import ReportSerializer, ReviewSerializer
 
 
-
 class ReportCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         serializer = ReportSerializer(data=request.data)
         if serializer.is_valid():
@@ -15,9 +16,15 @@ class ReportCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ReportListView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
     def get(self, request):
-        reports = Report.objects.all()
+        reports = Report.objects.all().order_by('-created_at')
         serializer = ReportSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -27,6 +34,7 @@ class ReportListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ReportDeleteView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -44,6 +52,8 @@ class ReportDeleteView(APIView):
 
 
 class ReviewCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
@@ -53,9 +63,14 @@ class ReviewCreateView(APIView):
 
 
 class ReviewListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
-        reviews = Review.objects.all()
-        serializer = ReviewSerializer(reviews, many=True)
+        queryset = Review.objects.all().order_by('-created_at')
+        listing_id = request.query_params.get('listing')
+        if listing_id:
+            queryset = queryset.filter(listing_id=listing_id)
+        serializer = ReviewSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):

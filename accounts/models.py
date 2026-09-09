@@ -67,7 +67,7 @@ class LandLordProfile(models.Model):
 class AgentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agent_profile')
     verification_status = models.CharField(max_length=50, default='unverified')
-    aggency_approval=models.CharField(max_length=50, default='unapproved')
+    agency_approval = models.CharField(max_length=50, default='unapproved')
     profile_avatar = models.ImageField(upload_to='agent_profiles/avatars/', blank=True, null=True)
     verified_at = models.DateTimeField(blank=True, null=True)
 
