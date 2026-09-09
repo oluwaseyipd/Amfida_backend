@@ -9,6 +9,8 @@ django-split-settings = "*"
 python-dotenv = "*"
 pillow = "*"
 djangorestframework = "*"
+decouple = "*"
+python-decouple = "*"
 
 [dev-packages]
 

@@ -16,6 +16,10 @@ db.sqlite3
 db.sqlite3-journal
 media/
 staticfiles/
+listing_photos/
+hostel_profiles/
+agent_profiles/
+landlord_profiles/
 
 # Secrets and configuration
 .env
