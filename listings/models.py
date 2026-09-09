@@ -65,5 +65,13 @@ class ListingAmenity(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['listing', 'amenity'],
+                name='unique_listing_amenity',
+            ),
+        ]
+
     def __str__(self):
         return f"{self.amenity.name} for {self.listing.title}"

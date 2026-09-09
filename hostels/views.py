@@ -1,102 +1,81 @@
-from rest_framework import status, permissions, generics
+from rest_framework import status, permissions, generics, filters
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
+
 from .permissions import IsHostelOwner
 from .models import Area, Hostel
 from .serializer import AreaSerializer, HostelSerializer
 
-# Create your views here.
 
-# 1. Create Area
-class AreaCreateView(APIView):
+# 1. Create Area (Admin only)
+class AreaCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAdminUser]
+    serializer_class = AreaSerializer
 
-    def post(self, request):
-        serializer = AreaSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# 2. List Areas
-class AreaListView(APIView):
-    def get(self, request):
-        areas = Area.objects.all()
-        serializer = AreaSerializer(areas, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+# 2. List Areas (Public)
+class AreaListView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AreaSerializer
+    queryset = Area.objects.all().order_by('name')
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['name', 'created_at']
 
-# 3. Update Area
-class AreaUpdateView(APIView):
+
+# 3. Update Area (Admin only)
+class AreaUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAdminUser]
-
-    def get_object(self, pk):
-        try:
-            return Area.objects.get(pk=pk)
-        except Area.DoesNotExist:
-            raise Http404
-
-    def put(self, request, pk):
-        area = self.get_object(pk)
-        serializer = AreaSerializer(area, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = AreaSerializer
+    queryset = Area.objects.all()
 
 
-# 4. Delete Area
-class AreaDeleteView(APIView):
+# 4. Delete Area (Admin only)
+class AreaDeleteView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAdminUser]
+    serializer_class = AreaSerializer
+    queryset = Area.objects.all()
 
-    def get_object(self, pk):
-        try:
-            return Area.objects.get(pk=pk)
-        except Area.DoesNotExist:
-            raise Http404
 
-    def delete(self, request, pk):
-        area = self.get_object(pk)
-        area.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-# 5. Create Hostel
-class HostelCreateView(APIView):
+# 5. Create Hostel (Authenticated Landlord only)
+class HostelCreateView(generics.CreateAPIView):
     permission_classes = [IsHostelOwner]
+    serializer_class = HostelSerializer
 
-    def post(self, request):
-        serializer = HostelSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(landlord=request.user.landlord_profile)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(landlord=self.request.user.landlord_profile)
 
-class HostelDetailView(APIView):
-    def get_object(self, pk):
-        try:
-            return Hostel.objects.get(pk=pk)
-        except Hostel.DoesNotExist:
-            raise Http404
 
-    def get(self, request, pk):
-        hostel = self.get_object(pk)
-        serializer = HostelSerializer(hostel)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+# 6. Detail Hostel (Public)
+class HostelDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = HostelSerializer
+    queryset = Hostel.objects.select_related('area', 'landlord', 'landlord__user').all()
 
-        
-# 6. List Hostels
-class HostelListView(APIView):
-    def get(self, request):
-        hostels = Hostel.objects.all()
-        serializer = HostelSerializer(hostels, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
-# 7. Update Hostel  
+# 7. List Hostels (Public, optimized with search & filter)
+class HostelListView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = HostelSerializer
+    queryset = Hostel.objects.select_related('area', 'landlord', 'landlord__user').all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['area', 'landlord']
+    search_fields = ['name', 'location', 'description', 'area__name']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['-created_at']
+
+
+# 8. Update Hostel (Authenticated Landlord owner only)
 class HostelUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsHostelOwner]
-    queryset = Hostel.objects.all()
+    queryset = Hostel.objects.select_related('area', 'landlord', 'landlord__user').all()
+    serializer_class = HostelSerializer
 
-# 8. Delete Hostel
+
+# 9. Delete Hostel (Authenticated Landlord owner only)
 class HostelDeleteView(generics.DestroyAPIView):
     permission_classes = [IsHostelOwner]
     queryset = Hostel.objects.all()
+    serializer_class = HostelSerializer
